@@ -1,11 +1,15 @@
 # RealTime-Concurrent-Systems---UDP
-SYSC 3303ABC Winter 2024 Assignment 2
-Carleton University
-Department of Systems and Computer Engineering
-SYSC 3303ABC RealTime Concurrent Systems Winter 2024
-Assignment 2 — Introduction to UDP
-Background
-The goal of this assignment is to build a very basic three part system consisting of a client, an
+# SYSC 3303ABC Winter 2024 Assignment 2
+## Carleton University
+### Department of Systems and Computer Engineering
+#### SYSC 3303ABC RealTime Concurrent Systems Winter 2024
+
+
+# Assignment 2 — Introduction to UDP
+## Background
+
+
+- The goal of this assignment is to build a very basic three part system consisting of a client, an
 intermediate host, and a server. The client sends requests to the intermediate host, which sends them
 on to the server. The server sends responses to the intermediate host, which sends them on to the
 client. From the client's point of view, the intermediate host appears to be the server. From the server's
@@ -17,7 +21,8 @@ DatagramPacket and DatagramSocket classes, as well as conversion between Strings
 bytes. It includes some very basic knowledge of UML Class and Collaboration Diagrams, but does not
 require any knowledge of Java threads or TFTP.
 Specification
-The client algorithm is:
+- 
+## The client algorithm is:
 • the client creates a DatagramSocket to use to both send and receive repeat the following 11 times:
 the client creates a DatagramPacket:
 the packet is either a "read request" or a "write request" (alternate between read and
@@ -37,9 +42,9 @@ the client sends the packet to a well known port: 23 on the intermediate host th
 on its DatagramSocket
 • when it receives a DatagramPacket from the intermediate host, it prints out the information
 received, including the byte array
-Page of1 3
-SYSC 3303ABC Winter 2024 Assignment 2
-The intermediate host algorithm is:
+
+
+## The intermediate host algorithm is:
 • the host creates a DatagramSocket to use to receive (port 23)
 • the host creates a DatagramSocket to use to send and receive
 • repeat the following "forever":
@@ -80,8 +85,7 @@ and sends the packet via the new socket to the port it received the request from
 the socket it just created
 Hints
 • The Echo ClientServer example discussed in class and posted on the web site will be useful.
-Page of2 3
-SYSC 3303ABC Winter 2024 Assignment 2
+
 • The APIs for the DatagramSocket, DatagramPacket, and String classes, as well as information on
 Java arrays which are available through the https://docs.oracle.com/javase/8/docs/api/ help
 facility, may also prove useful.
@@ -97,6 +101,8 @@ follow the specification!
 • The TAs will mark your assignments in the lab environment. It is your responsibility to ensure that
 your code works in that environment, and that any software required for viewing any text/diagrams
 is also present in the lab. You must use the Eclipse Java IDE.
+
+
 Work Products
 1. A “README.txt” file explaining the names of your files, set up instructions, etc.
 2. One UML Sequence diagram, showing the client, intermediate host, and server.
@@ -105,6 +111,7 @@ Work Products
 Eclipse. (You may submit test classes if you wrote them, but be sure to explain the files you have
 submitted – see #1 above.) Your code should demonstrate good programming style, and be well
 documented, etc.
+5. 
 For parts 2 and 3, hand drawn scanned diagrams are acceptable, as long as they are neatly drawn and
 your handwriting is legible, and the software required to view them is present in the lab. As an
 alternative, you can use Violet UML.
