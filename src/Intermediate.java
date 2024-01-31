@@ -1,4 +1,3 @@
-import java.io.IOException;
 import java.net.*;
 
 public class Intermediate {
@@ -7,82 +6,54 @@ public class Intermediate {
     DatagramSocket sendReceiveSocket;
     DatagramSocket receiveSocket;
 
-
-    Intermediate(){
-
+    Intermediate() {
         try {
-
-
             receiveSocket = new DatagramSocket(23);
             sendReceiveSocket = new DatagramSocket();
-
-        }catch(Exception e){
-
+        } catch (Exception e) {
             System.out.println("Oops!");
         }
-
     }
 
-    public void Receive(){
+    public void ReceiveAndForward() {
         try {
-            byte[] incomingMessage = new byte[100];
+            while (true) {
+                byte[] incomingMessage = new byte[100];
+                receivePacket = new DatagramPacket(incomingMessage, incomingMessage.length);
+                receiveSocket.receive(receivePacket);
 
-            receivePacket = new DatagramPacket(incomingMessage, incomingMessage.length);
+                System.out.println("Received Request: " + new String(receivePacket.getData()));
 
-            sendReceiveSocket.receive(receivePacket);
-
-
-            System.out.println("Received Request: " + new String(receivePacket.getData()));
-        }
-            catch(Exception e){
-
-                System.out.println("ERROR :: INTERMEDIATE :: Receive()");
-
+                Forward();
             }
+        } catch (Exception e) {
+            System.out.println("ERROR :: INTERMEDIATE :: ReceiveAndForward()");
+        }
     }
-
 
     public void Forward() {
         try {
             sendPacket = new DatagramPacket(receivePacket.getData(), receivePacket.getLength(), InetAddress.getLocalHost(), 69);
             System.out.println("Sending Request to Server: " + new String(sendPacket.getData()));
             sendReceiveSocket.send(sendPacket);
-
-
-        }catch(Exception e){
-
+        } catch (Exception e) {
             System.out.println("ERROR :: INTERMEDIATE :: Forward()");
-
         }
     }
 
-    public void Start(){
-
-
-        try{
-
-            Receive();
-            Forward();
-
-        }catch(Exception e){
-
-
+    public void Start() {
+        try {
+            ReceiveAndForward();
+        } catch (Exception e) {
+            e.printStackTrace(); // Print the exception details
+        } finally {
+            receiveSocket.close();
+            sendReceiveSocket.close();
         }
-
-
-
-
-
     }
 
-
-    public static void main(String [] args) throws IOException {
-
-
+    public static void main(String[] args) throws Exception {
+        Intermediate intermediateHost = new Intermediate();
+        intermediateHost.Start();
     }
-
-
-
-
-
 }

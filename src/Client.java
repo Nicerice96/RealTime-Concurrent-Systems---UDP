@@ -66,7 +66,9 @@ public class Client {
             Random random = new Random();
             int rand = random.nextInt(2);
 
-            String requestData = ((rand == 0)? "01" : "02" +  filename + "\0" + mode + "\0");
+            String requestData = ((rand == 0)? "01" + filename + "\0" + mode + "\0"  : "02" +  filename + "\0" + mode + "\0");
+
+
 
             byte [] requestDataBytes = requestData.getBytes();
 

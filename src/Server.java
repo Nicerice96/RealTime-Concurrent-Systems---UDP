@@ -1,14 +1,13 @@
+import java.io.IOException;
 import java.net.*;
+import java.util.Arrays;
 
 public class Server {
 
         DatagramPacket sendPacket, receivePacket;
         DatagramSocket receiveSocket;
 
-
-
-
-        Server(int port) throws SocketException {
+        Server() throws SocketException {
             try {
 
                 receiveSocket = new DatagramSocket(69);
@@ -19,61 +18,86 @@ public class Server {
         }
 
 
+
+    public void Send(DatagramPacket requestPacket, String requestPacketData) throws IOException {
+        if (isValidRequest(requestPacketData)) {
+            byte[] responseData;
+
+            // Extract operation code from the request packet
+            String operationCode = requestPacketData.substring(0, 2);
+
+            // Determine response based on the operation code
+            if ("01".equals(operationCode)) {
+                // Read request, send back 0 3 0 1
+                responseData = new byte[]{0, 3, 0, 1};
+            } else if ("02".equals(operationCode)) {
+                // Write request, send back 0 4 0 0
+                responseData = new byte[]{0, 4, 0, 0};
+            } else {
+                // Invalid operation code, handle accordingly
+                System.out.println("Invalid operation code: " + operationCode);
+                return;
+            }
+
+            // Print response packet information
+            System.out.println("Sending Response: " + Arrays.toString(responseData));
+
+            // Send the response packet to the client
+            DatagramSocket responseSocket = new DatagramSocket();
+            DatagramPacket responsePacket = new DatagramPacket(
+                    responseData, responseData.length,
+                    requestPacket.getAddress(), requestPacket.getPort()
+            );
+            responseSocket.send(responsePacket);
+
+            // Close the socket used for this response
+            responseSocket.close();
+        } else {
+            // If the packet is invalid, handle accordingly
+            System.out.println("Invalid request packet: " + requestPacketData);
+        }
+    }
+
+
+
+
     public void start() {
         try {
             while (true) {
-                // Wait to receive a request
                 byte[] requestBuffer = new byte[100];
                 DatagramPacket requestPacket = new DatagramPacket(requestBuffer, requestBuffer.length);
                 receiveSocket.receive(requestPacket);
 
-                // Print received information
                 System.out.println("Received Request: " + new String(requestPacket.getData()));
 
                 // Parse the packet to confirm its validity
-                if (isValidRequest(requestPacket.getData())) {
-                    // If the packet is a valid read request, send back 0 3 0 1 (exactly four bytes)
-                    // If the packet is a valid write request, send back 0 4 0 0 (exactly four bytes)
-                    byte[] responseBytes = (requestPacket.getData()[1] == 1) ? new byte[]{0, 3, 0, 1} : new byte[]{0, 4, 0, 0};
-
-                    // Print response packet information
-                    System.out.println("Sending Response: " + new String(responseBytes));
-
-                    DatagramSocket responseSocket = new DatagramSocket();
-
-                    // Send the packet via the new socket to the port it received the request from
-                    DatagramPacket responsePacket = new DatagramPacket(
-                            responseBytes, responseBytes.length,
-                            requestPacket.getAddress(), requestPacket.getPort()
-                    );
-                    responseSocket.send(responsePacket);
-
-                    // Close the socket used for this response
-                    responseSocket.close();
-                } else {
-                    // If the packet is invalid, throw an exception and quit
-                    throw new IllegalArgumentException("Invalid request packet");
-                }
+                Send(requestPacket, new String(requestPacket.getData()));
             }
         } catch (Exception e) {
             System.out.println("Error in server: " + e.getMessage());
-        } finally {
+            // Continue to the next iteration of the loop
+        }
+        finally {
             // Close the receiving socket in the finally block to ensure proper cleanup
             receiveSocket.close();
         }
     }
 
-    private boolean isValidRequest(byte[] requestData) {
+    private boolean isValidRequest(String data) {
         // Implement logic to validate the request packet format
         // For simplicity, assume the format is valid if it contains 0 1 or 0 2
-        return requestData.length >= 4 && (requestData[1] == 1 || requestData[1] == 2);
+
+        System.out.println("Received Packet Content: " + (data));
+
+
+
+        return data.length() >= 4 && (data.startsWith("01") || data.startsWith("02"));
+
     }
 
     public static void main(String[] args) throws SocketException {
-        // Specify the port number (e.g., 69)
-        int port = 69;
 
-        Server server = new Server(port);
+        Server server = new Server();
         server.start();
     }
 
