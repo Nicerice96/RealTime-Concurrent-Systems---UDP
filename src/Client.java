@@ -11,13 +11,16 @@ public class Client {
 //        System.out.println("Client sent a signal!");
 //    }
 
-
     DatagramPacket datagramPacket;
     DatagramSocket sendReceiveSocket;
 
+    int writeOrReadInteger;
+
+
+
     Client(){
         try {
-            sendReceiveSocket = new DatagramSocket();
+            sendReceiveSocket = new DatagramSocket(10);
         }catch(Exception e){
 
             System.out.println("ERROR :: CLIENT:: CONSTRUCTOR");
@@ -30,12 +33,28 @@ public class Client {
         //Write : [0, 2, filename, 0, mode, 0]
 
         try {
-            for (int i = 0; i < 11; i++) {
+            for (int i = 0; i <= 11; i++) {
+
+                System.out.println("Iteration : " + i);
 
 
-                datagramPacket = generateRequest(filename, mode);
+                if(i == 11){
 
-                System.out.println("Client is sending Request...: " + new String(datagramPacket.getData()));
+                    datagramPacket = invalidRequest();
+                    System.out.println("Client is has reached 11th iteration...: " + new String(datagramPacket.getData()));
+
+                }
+                else if (writeOrReadInteger % 2 == 0) {
+                    datagramPacket = generateRequest(filename, mode);
+
+                    System.out.println("Client is sending Write Request...: " + new String(datagramPacket.getData()));
+                }
+                else{
+                    datagramPacket = generateRequest(filename, mode);
+                    System.out.println("Client is sending Read Request...: " + new String(datagramPacket.getData()));
+                }
+
+
 
                 datagramPacket.setAddress(InetAddress.getLocalHost());
                 datagramPacket.setPort(23);
@@ -47,7 +66,7 @@ public class Client {
 
                 sendReceiveSocket.receive(incomingRequest);
 
-                System.out.println("Recieved Response...: " + new String(incomingRequest.getData()));
+                System.out.println("Recieved Response...: " + Arrays.toString(incomingRequest.getData()));
 
 
             }
@@ -63,22 +82,46 @@ public class Client {
 
     public DatagramPacket generateRequest(String filename, String mode){
 
-            Random random = new Random();
-            int rand = random.nextInt(2);
+//            Random random = new Random();
+//            int rand = random.nextInt(2);
+//
+//            String requestData = ((rand == 0)? "01" + filename + "\0" + mode + "\0"  : "02" +  filename + "\0" + mode + "\0");
+//
+//            byte [] requestDataBytes = requestData.getBytes();
+//
+//            return new DatagramPacket(requestDataBytes, requestDataBytes.length);
 
-            String requestData = ((rand == 0)? "01" + filename + "\0" + mode + "\0"  : "02" +  filename + "\0" + mode + "\0");
+        String requestData;
 
+        if (writeOrReadInteger % 2 == 0){
 
+            requestData = "01" + filename + "\0" + mode + "\0";
 
-            byte [] requestDataBytes = requestData.getBytes();
+        }
+        else{
+            requestData = "02" +  filename + "\0" + mode + "\0";
+        }
+        byte [] requestDataBytes = requestData.getBytes();
+        writeOrReadInteger++;
 
-            return new DatagramPacket(requestDataBytes, requestDataBytes.length);
-
+        return new DatagramPacket(requestDataBytes, requestDataBytes.length);
     }
 
     public static void main(String [] args){
         Client c = new Client();
         c.ReadWriteRequest("someStupidFile.txt", "someStupidMode");
+    }
+
+
+
+    public DatagramPacket invalidRequest(){
+
+        String invalidRequest = "Invalid Request";
+        byte [] invalidRequestBytes = invalidRequest.getBytes();
+
+
+        return new DatagramPacket(invalidRequestBytes, invalidRequestBytes.length);
+
     }
 
 }
