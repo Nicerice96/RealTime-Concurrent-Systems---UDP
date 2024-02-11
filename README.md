@@ -60,6 +60,7 @@ java Client
 # UML Diagrams
 ## Sequence Diagram:
 ![UML_Sequence_Diagram.drawio.png](UML_Sequence_Diagram.drawio.png)
+
 [UML_Sequence_Diagram.drawio.pdf](UML_Sequence_Diagram.drawio.pdf)
 
 ## UML Diagram:
