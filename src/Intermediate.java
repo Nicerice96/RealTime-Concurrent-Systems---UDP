@@ -1,127 +1,135 @@
+
 import java.io.IOException;
 import java.net.*;
+import java.rmi.Naming;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
 import java.util.Arrays;
 
-import static java.lang.Thread.sleep;
-
-/**
- * Constructor : Receives data from the Client class and forwards them to the Server Class
- *
- * @author Zarif
- * @version 1.0
- */
 public class Intermediate {
 
-    DatagramPacket sendPacket, receivePacket;
-    DatagramSocket sendReceiveSocket;
-    DatagramSocket receiveSocket;
+    public static boolean serverFlag = false;
+    public static boolean clientFlag = false;
 
-    Intermediate() {
+
+    private DatagramSocket sendReceiveSocket;
+    private DatagramSocket receiveSocket;
+
+    private SharedDataInterface sharedData;
+
+    public Intermediate(SharedDataInterface sharedData) {
         try {
-            receiveSocket = new DatagramSocket(23);
-            sendReceiveSocket = new DatagramSocket();
+            this.sharedData = sharedData;
+            receiveSocket = new DatagramSocket(23); // Port for receiving requests from both client and server
+            sendReceiveSocket = new DatagramSocket(); // Socket for sending/receiving acknowledgment messages
         } catch (Exception e) {
-            System.out.println("Oops!");
+            e.printStackTrace();
         }
     }
 
-    /**
-     * Takes in data received from Client and forwards it to Server; Takes in data from Server and forwards it to the client
-     */
+    public void run() {
 
-    public void ReceiveAndForward() {
         try {
+
+
             while (true) {
-                byte[] incomingMessage = new byte[50];
-                receivePacket = new DatagramPacket(incomingMessage, incomingMessage.length);
+
+                byte[] incomingMessage = new byte[1024];
+                DatagramPacket receivePacket = new DatagramPacket(incomingMessage, incomingMessage.length);
                 receiveSocket.receive(receivePacket);
 
-                System.out.println("Received Request: " + new String(receivePacket.getData()));
 
-                Forward(69);
+                sharedData.addMessage(new String(receivePacket.getData()));
+                System.out.println("Added" + sharedData.getLast());
 
-                sleep(1000);
+                // Send acknowledgment to Client
+                String acknowledgmentMessage = "Intermediate received the Data";
+                byte[] acknowledgmentData = acknowledgmentMessage.getBytes();
+                DatagramPacket acknowledgmentPacket = new DatagramPacket(acknowledgmentData, acknowledgmentData.length, receivePacket.getAddress(), receivePacket.getPort());
+                sendReceiveSocket.send(acknowledgmentPacket);
 
-                sendBack();
+
+
+                //Wait for server Request
+
+                byte[] incomingServerRequest = new byte[1024];
+                DatagramPacket incomingServerRequestPacket = new DatagramPacket(incomingServerRequest, incomingServerRequest.length);
+                receiveSocket.receive(incomingServerRequestPacket);
+                System.out.println("Received Server Request for data " + new String(incomingServerRequestPacket.getData()));
+
+                System.out.println("Going forward this to Server" + sharedData.getLast());
+                // Forward data to the server for processing
+                forwardClientDataToServer(sharedData.getMessage());
+
+                //Server Returns Processed Data
+
+                byte[] serverProcessedData = new byte[4];
+                DatagramPacket serverProcessedPacket = new DatagramPacket(serverProcessedData, serverProcessedData.length);
+                receiveSocket.receive(serverProcessedPacket);
+
+
+                sharedData.addMessage(Arrays.toString(serverProcessedPacket.getData()));
+                System.out.println("Added " + sharedData.getLast());
+
+
+                //Intermediate Acknowledges the data
+                String serverAcknowledgmentMessage = "Intermediate received the Data";
+                byte[] serverAcknowledgmentMessageData = serverAcknowledgmentMessage.getBytes();
+                DatagramPacket serverAcknowledgmentMessagePacket = new DatagramPacket(serverAcknowledgmentMessageData, serverAcknowledgmentMessageData.length, receivePacket.getAddress(), receivePacket.getPort());
+                sendReceiveSocket.send(serverAcknowledgmentMessagePacket);
+
+                //Wait for client request
+                byte[] clientRequestData = new byte[1024];
+                DatagramPacket clientRequestDataPacket = new DatagramPacket(clientRequestData, clientRequestData.length);
+                receiveSocket.receive(clientRequestDataPacket);
+                String clientRequestString = new String(clientRequestDataPacket.getData(), clientRequestDataPacket.getOffset(), clientRequestDataPacket.getLength()).trim();
+                System.out.println("Received Request from Client: " + clientRequestString);
+
+                System.out.println("Going forward this to Client" + sharedData.getLast());
+
+                forwardDataToClient(sharedData.getMessage());
+
+                System.out.println("----------------------------------------------------------------------------------------------");
             }
-        } catch (Exception e) {
-            System.out.println("ERROR :: INTERMEDIATE :: ReceiveAndForward()");
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
         }
     }
 
 
-    /**
-     * Forwards data to desired port
-     *
-     * @param port
-     */
-
-    public void Forward(int port) {
-
-        if (port == 69) {
-            try {
-                sendPacket = new DatagramPacket(receivePacket.getData(), receivePacket.getLength(), InetAddress.getLocalHost(), port);
-                System.out.println("Sending Request to Server: " + new String(sendPacket.getData()));
-                sendReceiveSocket.send(sendPacket);
-            } catch (Exception e) {
-                System.out.println("ERROR :: INTERMEDIATE :: Forward()");
-            }
-        }
-        if (port == 10) {
-            try {
-                sendPacket = new DatagramPacket(receivePacket.getData(), receivePacket.getLength(), InetAddress.getLocalHost(), port);
-                System.out.println("Sending Request Client: " + Arrays.toString(sendPacket.getData()));
-                sendReceiveSocket.send(sendPacket);
-            } catch (Exception e) {
-                System.out.println("ERROR :: INTERMEDIATE :: Forward()");
-            }
-
-        }
+    public void forwardClientDataToServer(String clientPacket) throws IOException {
+        byte [] clientPacketBytes = clientPacket.getBytes();
+        // Forward client data to server for processing
+        DatagramPacket sendPacket = new DatagramPacket(clientPacketBytes, clientPacketBytes.length, InetAddress.getLocalHost(), 69); // Port for server
+        sendReceiveSocket.send(sendPacket);
     }
 
-    /**
-     * Peers into Intermediate socket so that it may send it back to Client
-     */
+    public void forwardDataToClient(String serverPacket) throws IOException {
 
-    public void sendBack() {
+        byte [] serverBytes = serverPacket.getBytes();
+        // Forward processed data from server to client
+        DatagramPacket forwardPacket = new DatagramPacket(serverBytes, serverBytes.length, InetAddress.getLocalHost(), 10); //send to Client
+        sendReceiveSocket.send(forwardPacket);
+    }
 
+    public static void main(String[] args) {
 
         try {
-            byte[] incomingMessage = new byte[20];
-            receivePacket = new DatagramPacket(incomingMessage, incomingMessage.length);
-            receiveSocket.receive(receivePacket);
+            SharedData sharedData = new SharedData();
+            System.setProperty("java.rmi.server.hostname","192.168.1.2");
 
-            Forward(10);
 
-        } catch (IOException e) {
+
+            // Create and export the RMI registry
+            LocateRegistry.createRegistry(1099);
+
+            // Bind the remote object's stub in the registry
+            Naming.rebind("SharedData", sharedData);
+
+            Intermediate intermediateHost = new Intermediate(sharedData);
+            intermediateHost.run();
+        } catch (MalformedURLException | RemoteException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    /**
-     * Begins Intermediate Class behaviour
-     */
-
-    public void Start() {
-        try {
-            ReceiveAndForward();
-        } catch (Exception e) {
-            e.printStackTrace(); // Print the exception details
-        } finally {
-            receiveSocket.close();
-            sendReceiveSocket.close();
-        }
-    }
-
-    /**
-     * Main thread for Intermediate Class
-     *
-     * @param args
-     * @throws Exception
-     */
-
-    public static void main(String[] args) throws Exception {
-        Intermediate intermediateHost = new Intermediate();
-        intermediateHost.Start();
     }
 }
